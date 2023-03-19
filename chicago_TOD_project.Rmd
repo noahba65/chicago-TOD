@@ -11,6 +11,7 @@ library(tidyverse)
 library(tidycensus)
 library(sf)
 library(kableExtra)
+library(acs)
 
 options(scipen=999)
 options(tigris_class = "sf")
@@ -24,32 +25,177 @@ palette5 <- c("#f0f9e8","#bae4bc","#7bccc4","#43a2ca","#0868ac")
 
 
 
-
 ```{r}
-
-
-cook21 <- 
+#  Income = B07011_001
+# Pulling ACS Five year data (2005-2009) for the seven CMAP counties
+cook09 <- 
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2021, state=17, county=031, geometry=T, output="wide") %>%
+          year=2009, state=17, county=031, geometry=T, output="wide") %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
-         MedHHInc = B19013_001E, MedRent = B25058_001E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
          TotalPoverty = B06012_002E) %>%
   dplyr::select(-NAME, -starts_with("B")) %>%
   mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
          pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
          pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
-         year = "2017") %>%
+         year = "2009", county = "Cook") %>%
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty, - Income) 
+
+
+
+dupage09 <- 
+  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
+                                             "B15001_009E","B19013_001E","B25058_001E",
+                                             "B06012_002E", "B25026_001E"), 
+          year=2009, state=17, county=043, geometry=T, output="wide") %>%
+  st_transform('ESRI:102728') %>%
+  rename(TotalPop = B25026_001E, Whites = B02001_002E,
+         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
+         TotalPoverty = B06012_002E) %>%
+  dplyr::select(-NAME, -starts_with("B")) %>%
+  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
+         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
+         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
+         year = "2009", county = "Dupage") %>%
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
+
+kane09 <- 
+  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
+                                             "B15001_009E","B19013_001E","B25058_001E",
+                                             "B06012_002E"), 
+          year=2009, state=17, county=089, geometry=T, output="wide") %>%
+  st_transform('ESRI:102728') %>%
+  rename(TotalPop = B25026_001E, Whites = B02001_002E,
+         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
+         TotalPoverty = B06012_002E) %>%
+  dplyr::select(-NAME, -starts_with("B")) %>%
+  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
+         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
+         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
+         year = "2009", county = "Kane") %>%
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
+
+kendall09 <- 
+  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
+                                             "B15001_009E","B19013_001E","B25058_001E",
+                                             "B06012_002E"), 
+          year=2009, state=17, county=093, geometry=T, output="wide") %>%
+  st_transform('ESRI:102728') %>%
+  rename(TotalPop = B25026_001E, Whites = B02001_002E,
+         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
+         TotalPoverty = B06012_002E) %>%
+  dplyr::select(-NAME, -starts_with("B")) %>%
+  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
+         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
+         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
+         year = "2009", county = "Kendall") %>%
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
+
+lake09  <- 
+  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
+                                             "B15001_009E","B19013_001E","B25058_001E",
+                                             "B06012_002E"), 
+          year=2009, state=17, county=097, geometry=T, output="wide") %>%
+  st_transform('ESRI:102728') %>%
+  rename(TotalPop = B25026_001E, Whites = B02001_002E,
+         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
+         TotalPoverty = B06012_002E) %>%
+  dplyr::select(-NAME, -starts_with("B")) %>%
+  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
+         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
+         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
+         year = "2009", county = "Lake") %>%
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
+
+mchenry09 <- 
+  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
+                                             "B15001_009E","B19013_001E","B25058_001E",
+                                             "B06012_002E"), 
+          year=2009, state=17, county=111, geometry=T, output="wide") %>%
+  st_transform('ESRI:102728') %>%
+  rename(TotalPop = B25026_001E, Whites = B02001_002E,
+         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
+         TotalPoverty = B06012_002E) %>%
+  dplyr::select(-NAME, -starts_with("B")) %>%
+  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
+         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
+         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
+         year = "2009", county = "McHenry") %>%
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
+
+will09 <- 
+  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
+                                             "B15001_009E","B19013_001E","B25058_001E",
+                                             "B06012_002E"), 
+          year=2009, state=17, county=197, geometry=T, output="wide") %>%
+  st_transform('ESRI:102728') %>%
+  rename(TotalPop = B25026_001E, Whites = B02001_002E,
+         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
+         TotalPoverty = B06012_002E) %>%
+  dplyr::select(-NAME, -starts_with("B")) %>%
+  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
+         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
+         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
+         year = "2009", county = "Will") %>%
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
+
+# Creating one tract data frame for the CMAP region
+tracts09 <- rbind(cook09,dupage09,kane09,kendall09,lake09,mchenry09,will09)
+
+
+
+
+
+# Pulling ACS Five year data (2015-2019) for the seven CMAP counties
+cook19 <- 
+  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
+                                             "B15001_009E","B19013_001E","B25058_001E",
+                                             "B06012_002E"), 
+          year=2019, state=17, county=031, geometry=T, output="wide") %>%
+  st_transform('ESRI:102728') %>%
+  rename(TotalPop = B25026_001E, Whites = B02001_002E,
+         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
+         TotalPoverty = B06012_002E) %>%
+  dplyr::select(-NAME, -starts_with("B")) %>%
+  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
+         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
+         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
+         year = "2019", county = "Cook") %>%
   dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty) 
 
-dupage21 <- 
+dupage19 <- 
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2021, state=17, county=043, geometry=T, output="wide") %>%
+          year=2019, state=17, county=043, geometry=T, output="wide") %>%
+  st_transform('ESRI:102728') %>%
+  rename(TotalPop = B25026_001E, Whites = B02001_002E,
+         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
+         TotalPoverty = B06012_002E) %>%
+  dplyr::select(-NAME, -starts_with("B")) %>%
+  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
+         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
+         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
+         year = "2019", county = "Dupage") %>%
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
+
+kane19 <- 
+  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
+                                             "B15001_009E","B19013_001E","B25058_001E",
+                                             "B06012_002E"), 
+          year=2019, state=17, county=089, geometry=T, output="wide") %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -59,14 +205,31 @@ dupage21 <-
   mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
          pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
          pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
-         year = "2017") %>%
+         year = "2019", county = "Kane") %>%
   dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
 
-kane21 <- 
+kendall19 <- 
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2021, state=17, county=089, geometry=T, output="wide") %>%
+          year=2019, state=17, county=093, geometry=T, output="wide") %>%
+  st_transform('ESRI:102728') %>%
+  rename(TotalPop = B25026_001E, Whites = B02001_002E,
+         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
+         TotalPoverty = B06012_002E) %>%
+  dplyr::select(-NAME, -starts_with("B")) %>%
+  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
+         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
+         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
+         year = "2019", county = "Kendall") %>%
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
+
+lake19  <- 
+  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
+                                             "B15001_009E","B19013_001E","B25058_001E",
+                                             "B06012_002E"), 
+          year=2019, state=17, county=097, geometry=T, output="wide") %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -76,78 +239,48 @@ kane21 <-
   mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
          pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
          pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
-         year = "2017") %>%
+         year = "2019", county = "Lake") %>%
   dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
 
-kendall21 <- 
+mchenry19 <- 
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2021, state=17, county=093, geometry=T, output="wide") %>%
+          year=2019, state=17, county=111, geometry=T, output="wide") %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
-         MedHHInc = B19013_001E, MedRent = B25058_001E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
          TotalPoverty = B06012_002E) %>%
   dplyr::select(-NAME, -starts_with("B")) %>%
   mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
          pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
          pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
-         year = "2017") %>%
+         year = "2019", county = "McHenry") %>%
   dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
 
-lake21  <- 
+will19 <- 
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
-                                             "B06012_002E"), 
-          year=2021, state=17, county=097, geometry=T, output="wide") %>%
+                                             "B06012_002E", "B25026_001E"), 
+          year=2019, state=17, county=197, geometry=T, output="wide") %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
-         MedHHInc = B19013_001E, MedRent = B25058_001E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
          TotalPoverty = B06012_002E) %>%
   dplyr::select(-NAME, -starts_with("B")) %>%
   mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
          pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
-         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
-         year = "2017") %>%
-  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
+         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0), 
+         year = "2019", county = "Will") %>%
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty, )
 
-mchenry21 <- 
-  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
-                                             "B15001_009E","B19013_001E","B25058_001E",
-                                             "B06012_002E"), 
-          year=2021, state=17, county=111, geometry=T, output="wide") %>%
-  st_transform('ESRI:102728') %>%
-  rename(TotalPop = B25026_001E, Whites = B02001_002E,
-         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
-         MedHHInc = B19013_001E, MedRent = B25058_001E,
-         TotalPoverty = B06012_002E) %>%
-  dplyr::select(-NAME, -starts_with("B")) %>%
-  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
-         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
-         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
-         year = "2017") %>%
-  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
 
-will21 <- 
-  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
-                                             "B15001_009E","B19013_001E","B25058_001E",
-                                             "B06012_002E"), 
-          year=2021, state=17, county=197, geometry=T, output="wide") %>%
-  st_transform('ESRI:102728') %>%
-  rename(TotalPop = B25026_001E, Whites = B02001_002E,
-         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
-         MedHHInc = B19013_001E, MedRent = B25058_001E,
-         TotalPoverty = B06012_002E) %>%
-  dplyr::select(-NAME, -starts_with("B")) %>%
-  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
-         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
-         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
-         year = "2017") %>%
-  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty)
 
-tracts21 <- rbind(cook21,dupage21,kane21,kendall21,lake21,mchenry21,will21)
+tracts19 <- rbind(cook19,dupage19,kane19,kendall19,lake19,mchenry19,will19)
+
+allTracts <- rbind(tracts09,tracts19)
 
 ggplot() + 
   geom_sf(data = tracts21) + 
@@ -160,28 +293,88 @@ Wrangling Metra data from https://data.cityofchicago.org/Transportation/Metra-St
 
 ```{r}
 
-metra_stops <- st_read(file.path("/Users/noahanderson/Downloads/Metra_Stations (1)")) %>% 
+metra_stops <- st_read("/Users/noahanderson/Documents/GitHub/chicago-TOD/DATA/MetraStations.shp") %>% 
   st_transform('ESRI:102728') 
 
 # Filters out stops outside of the CMAP region
-metra_cmap <- st_intersection(tracts21,metra_stops)
+metra_cmap <- st_intersection(tracts19,metra_stops)
 
-# Creates a halfmile buffer around the metra stops 
-metra_buffer <- st_union(st_buffer(metra_cmap,2640)) %>%
+# Creates a mile buffer around the metra stops 
+metra_buffer <- st_union(st_buffer(metra_cmap,5280)) %>%
+  st_sf()
+
+
+
+tract_buffer <- st_centroid(tracts09)[metra_buffer,] %>%
+  st_drop_geometry() %>%
+  left_join(dplyr::select(tracts09,GEOID)) %>%
   st_sf()
 
 
 
 ggplot() +
   
-  geom_sf(data = st_union(tracts21)) + 
+  geom_sf(data = st_union(tracts09)) + 
   
-  geom_sf(data = metra_buffer, color = "red") + 
+  geom_sf(data = tract_buffer) +
   
   labs(title = "CMAP Region Metra Buffer") +
   
   mapTheme()
+
 ```
 
+Rent Maps 
+```{r}
+allTracts.group <- 
+  rbind( 
+    st_centroid(allTracts)[tract_buffer,] %>%
+      st_drop_geometry() %>%
+      left_join(allTracts) %>%
+      st_sf() %>%
+      mutate(TOD = "TOD"),
+    st_centroid(allTracts)[tract_buffer, op = st_disjoint] %>%
+      st_drop_geometry() %>%
+      left_join(allTracts) %>%
+      st_sf() %>%
+      mutate(TOD = "Non-TOD")) %>%
+  mutate(MedRent.inf = ifelse(year == "2009", MedRent * 1.2, MedRent)) 
 
+ggplot() +
+  geom_sf(data = st_union(tracts09)) +
+  
+  geom_sf(data = allTracts.group, aes(fill = q5(MedRent.inf)),color = NA) + 
+  
+  geom_sf(data = metra_buffer, fill = NA, color = "red", linewidth = 1) +
 
+  scale_fill_manual(values = palette5, labels = qBr(allTracts.group,"MedRent.inf"), name = "Total Population \n (Quantile Breaks)") + 
+  
+  facet_wrap(~year) +
+  
+  mapTheme() 
+```
+
+```{r}
+allTracts.Summary <- 
+  st_drop_geometry(allTracts.group) %>%
+    group_by(year, TOD) %>%
+    summarize(Rent = mean(MedRent.inf, na.rm = T),
+              Population = mean(TotalPop, na.rm = T),
+              Percent_White = mean(pctWhite, na.rm = T),
+              Percent_Bach = mean(pctBachelors, na.rm = T),
+              Percent_Poverty = mean(pctPoverty, na.rm = T))
+
+kable(allTracts.Summary) %>%
+  kable_styling() %>%
+  footnote(general_title = "\n",
+           general = "Table 1.2")
+
+allTracts.Summary %>%
+  gather(Variable, Value, -year, -TOD) %>%
+  ggplot(aes(year, Value, fill = TOD)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    facet_wrap(~Variable, scales = "free", ncol=5) +
+    scale_fill_manual(values = c("#bae4bc", "#0868ac")) +
+    labs(title = "Indicator differences across time and space")  + theme(legend.position="bottom")
+
+```
