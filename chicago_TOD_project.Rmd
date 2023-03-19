@@ -43,7 +43,7 @@ cook09 <-
          pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
          pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
          year = "2009", county = "Cook") %>%
-  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty, - Income) 
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty) 
 
 
 
@@ -293,7 +293,7 @@ Wrangling Metra data from https://data.cityofchicago.org/Transportation/Metra-St
 
 ```{r}
 
-metra_stops <- st_read("/Users/noahanderson/Documents/GitHub/chicago-TOD/DATA/MetraStations.shp") %>% 
+metra_stops <- st_read("/Users/noahanderson/Documents/GitHub/chicago-TOD/DATA/MetraStation/MetraStations.shp") %>% 
   st_transform('ESRI:102728') 
 
 # Filters out stops outside of the CMAP region
@@ -353,7 +353,7 @@ ggplot() +
   
   mapTheme() 
 ```
-
+Creating the Same graphs as in chapter 1
 ```{r}
 allTracts.Summary <- 
   st_drop_geometry(allTracts.group) %>%
@@ -377,4 +377,30 @@ allTracts.Summary %>%
     scale_fill_manual(values = c("#bae4bc", "#0868ac")) +
     labs(title = "Indicator differences across time and space")  + theme(legend.position="bottom")
 
+
 ```
+
+
+Rent as a function of distance to stations
+```{r}
+allTracts.rings <-
+  st_join(st_centroid(dplyr::select(allTracts, GEOID, year)), 
+          multipleRingBuffer(st_union(septaStops), 47520, 2640)) %>%
+  st_drop_geometry() %>%
+  left_join(dplyr::select(allTracts, GEOID, MedRent, year), 
+            by=c("GEOID"="GEOID", "year"="year")) %>%
+  st_sf() %>%
+  mutate(distance = distance / 5280) #convert to miles
+
+
+ggplot() + 
+  geom_sf(data = st_union(allTracts)) +
+  
+  geom_sf(data = allTracts.rings) +
+  
+  mapTheme()
+
+```
+
+
+
