@@ -2,7 +2,13 @@
 title: "Assesing Demand for Transit Accessesible Apartments"
 output: html_document
 ---
-
+TO DO:
+- Cache All tables
+- Add shape file for Chicago boundaries 
+- Add CTA data
+- recreate buffers set to quarter mile
+- Replicate graphs on changes 2009 - 2019
+- create ring buffers for 
 
 
 
@@ -24,7 +30,7 @@ palette5 <- c("#f0f9e8","#bae4bc","#7bccc4","#43a2ca","#0868ac")
 
 
 
-
+# CMAP Region 
 ```{r}
 #  Income = B07011_001
 # Pulling ACS Five year data (2005-2009) for the seven CMAP counties
@@ -32,7 +38,7 @@ cook09 <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2009, state=17, county=031, geometry=T, output="wide") %>%
+          year=2009, state=17, county=031, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -51,7 +57,7 @@ dupage09 <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E", "B25026_001E"), 
-          year=2009, state=17, county=043, geometry=T, output="wide") %>%
+          year=2009, state=17, county=043, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -68,7 +74,7 @@ kane09 <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2009, state=17, county=089, geometry=T, output="wide") %>%
+          year=2009, state=17, county=089, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -85,7 +91,7 @@ kendall09 <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2009, state=17, county=093, geometry=T, output="wide") %>%
+          year=2009, state=17, county=093, geometry=T, output="wide",cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -102,7 +108,7 @@ lake09  <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2009, state=17, county=097, geometry=T, output="wide") %>%
+          year=2009, state=17, county=097, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -119,7 +125,7 @@ mchenry09 <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2009, state=17, county=111, geometry=T, output="wide") %>%
+          year=2009, state=17, county=111, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -136,7 +142,7 @@ will09 <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2009, state=17, county=197, geometry=T, output="wide") %>%
+          year=2009, state=17, county=197, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -161,7 +167,7 @@ cook19 <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2019, state=17, county=031, geometry=T, output="wide") %>%
+          year=2019, state=17, county=031, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -178,7 +184,7 @@ dupage19 <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2019, state=17, county=043, geometry=T, output="wide") %>%
+          year=2019, state=17, county=043, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -195,7 +201,7 @@ kane19 <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2019, state=17, county=089, geometry=T, output="wide") %>%
+          year=2019, state=17, county=089, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -212,7 +218,7 @@ kendall19 <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2019, state=17, county=093, geometry=T, output="wide") %>%
+          year=2019, state=17, county=093, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -229,7 +235,7 @@ lake19  <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2019, state=17, county=097, geometry=T, output="wide") %>%
+          year=2019, state=17, county=097, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -246,7 +252,7 @@ mchenry19 <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E"), 
-          year=2019, state=17, county=111, geometry=T, output="wide") %>%
+          year=2019, state=17, county=111, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -263,7 +269,7 @@ will19 <-
   get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
                                              "B15001_009E","B19013_001E","B25058_001E",
                                              "B06012_002E", "B25026_001E"), 
-          year=2019, state=17, county=197, geometry=T, output="wide") %>%
+          year=2019, state=17, county=197, geometry=T, output="wide", cache_table = TRUE) %>%
   st_transform('ESRI:102728') %>%
   rename(TotalPop = B25026_001E, Whites = B02001_002E,
          FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
@@ -280,10 +286,10 @@ will19 <-
 
 tracts19 <- rbind(cook19,dupage19,kane19,kendall19,lake19,mchenry19,will19)
 
-allTracts <- rbind(tracts09,tracts19)
+allTracts_cmap <- rbind(tracts09,tracts19)
 
 ggplot() + 
-  geom_sf(data = tracts21) + 
+  geom_sf(data = tracts19) + 
   mapTheme()
 ```
 
@@ -300,7 +306,7 @@ metra_stops <- st_read("/Users/noahanderson/Documents/GitHub/chicago-TOD/DATA/Me
 metra_cmap <- st_intersection(tracts19,metra_stops)
 
 # Creates a mile buffer around the metra stops 
-metra_buffer <- st_union(st_buffer(metra_cmap,5280)) %>%
+metra_buffer <- st_union(st_buffer(metra_cmap,5280/2)) %>%
   st_sf()
 
 
@@ -318,45 +324,35 @@ ggplot() +
   
   geom_sf(data = tract_buffer) +
   
-  labs(title = "CMAP Region Metra Buffer") +
+  labs(title = "CMAP Region \n Metra Buffer") +
   
   mapTheme()
 
 ```
 
-Rent Maps 
+
 ```{r}
-allTracts.group <- 
+# Combining CMAP 2009 and 2019 ACS data 
+allTracts_cmap.group <- 
   rbind( 
-    st_centroid(allTracts)[tract_buffer,] %>%
+    st_centroid(allTracts_cmap)[tract_buffer,] %>%
       st_drop_geometry() %>%
-      left_join(allTracts) %>%
+      left_join(allTracts_cmap) %>%
       st_sf() %>%
       mutate(TOD = "TOD"),
-    st_centroid(allTracts)[tract_buffer, op = st_disjoint] %>%
+    st_centroid(allTracts_cmap)[tract_buffer, op = st_disjoint] %>%
       st_drop_geometry() %>%
-      left_join(allTracts) %>%
+      left_join(allTracts_cmap) %>%
       st_sf() %>%
       mutate(TOD = "Non-TOD")) %>%
   mutate(MedRent.inf = ifelse(year == "2009", MedRent * 1.2, MedRent)) 
+# 2009 rent is adjusted for inflation 
 
-ggplot() +
-  geom_sf(data = st_union(tracts09)) +
-  
-  geom_sf(data = allTracts.group, aes(fill = q5(MedRent.inf)),color = NA) + 
-  
-  geom_sf(data = metra_buffer, fill = NA, color = "red", linewidth = 1) +
-
-  scale_fill_manual(values = palette5, labels = qBr(allTracts.group,"MedRent.inf"), name = "Total Population \n (Quantile Breaks)") + 
-  
-  facet_wrap(~year) +
-  
-  mapTheme() 
 ```
 Creating the Same graphs as in chapter 1
 ```{r}
-allTracts.Summary <- 
-  st_drop_geometry(allTracts.group) %>%
+allTracts_cmap.Summary <- 
+  st_drop_geometry(allTracts_cmap.group) %>%
     group_by(year, TOD) %>%
     summarize(Rent = mean(MedRent.inf, na.rm = T),
               Population = mean(TotalPop, na.rm = T),
@@ -364,16 +360,17 @@ allTracts.Summary <-
               Percent_Bach = mean(pctBachelors, na.rm = T),
               Percent_Poverty = mean(pctPoverty, na.rm = T))
 
-kable(allTracts.Summary) %>%
+kable(allTracts_cmap.Summary) %>%
   kable_styling() %>%
   footnote(general_title = "\n",
            general = "Table 1.2")
 
-allTracts.Summary %>%
-  gather(Variable, Value, -year, -TOD) %>%
+
+allTracts_cmap.Summary %>%
+  gather(Variables, Value, -year, -TOD) %>%
   ggplot(aes(year, Value, fill = TOD)) +
     geom_bar(stat = "identity", position = "dodge") +
-    facet_wrap(~Variable, scales = "free", ncol=5) +
+    facet_wrap(~Variables, scales = "free", ncol=5) +
     scale_fill_manual(values = c("#bae4bc", "#0868ac")) +
     labs(title = "Indicator differences across time and space")  + theme(legend.position="bottom")
 
@@ -381,26 +378,138 @@ allTracts.Summary %>%
 ```
 
 
-Rent as a function of distance to stations
+Rent as a function of distance to stations CMAP
 ```{r}
-allTracts.rings <-
-  st_join(st_centroid(dplyr::select(allTracts, GEOID, year)), 
-          multipleRingBuffer(st_union(septaStops), 47520, 2640)) %>%
+allTracts_cmap.rings <-
+  st_join(st_centroid(dplyr::select(tracts19, GEOID, year)), 
+          multipleRingBuffer(st_union(metra_stops), 47520, 5280/2)) %>%
   st_drop_geometry() %>%
   left_join(dplyr::select(allTracts, GEOID, MedRent, year), 
             by=c("GEOID"="GEOID", "year"="year")) %>%
   st_sf() %>%
   mutate(distance = distance / 5280) #convert to miles
 
+medRent_Distance_cmap <-  allTracts_cmap.rings %>%
+  group_by(distance) %>%
+  summarize(mean_rent = mean(MedRent, na.rm = TRUE))
 
 ggplot() + 
-  geom_sf(data = st_union(allTracts)) +
   
-  geom_sf(data = allTracts.rings) +
-  
-  mapTheme()
+  geom_line(data = medRent_Distance_cmap, aes(x = distance, y = mean_rent)) 
+
+
+
+```
+
+# Chicago Only
+
+```{r}
+chicago_neighborhoods <- st_read("https://raw.githubusercontent.com/noahba65/chicago-TOD/main/DATA/chicago_boundary.geojson") %>%
+  st_transform('ESRI:102728') %>% st_sf()
+
+chicago_boundary <- st_union(chicago_neighborhoods) %>% 
+  st_sf()
+
+cta_stops <- st_read("https://raw.githubusercontent.com/ChicagoCityscape/gis-data/master/stations_cta/cta_entrances.geojson") %>%
+  st_transform('ESRI:102728') %>% st_sf()
+
+# Creating Chicago only ACS tract data for 2009 and 2019
+chicago09 <- st_intersection(chicago_boundary, cook09)
+chicago19 <- st_intersection(chicago_boundary,cook19) 
+
+allTracts_chicago <- rbind(chicago09,chicago19)
+
+
+# Creating CTA buffer
+cta_buffer <- st_union(st_buffer(cta_stops,5280/4)) %>%
+  st_sf()
+
+
+
+# Cannot get this to work
+tract_buffer_chicago <- st_centroid(chicago09)[cta_buffer,] %>%
+  st_drop_geometry() %>%
+  left_join(dplyr::select(chicago09,GEOID)) %>%
+  st_sf()
+
+
+
+ggplot() +
+  geom_sf(data = chicago_tracts, aes(fill = MedRent)) + 
+  labs(fill = "Median Rent (USD)") + ggtitle("Rent Distribution in Chicago") + 
+  mapTheme() 
+ggplot() +
+  geom_sf(data = st_union(chicago09)) +
+  geom_sf(data = tract_buffer_chicago, fill = "red")  + mapTheme()
 
 ```
 
 
+```{r}
 
+class(allTracts_chicago)
+class(allTracts_cmap)
+# Combining CMAP 2009 and 2019 ACS data 
+allTracts_chicago.group <- 
+  rbind( 
+    st_centroid(allTracts_chicago)[tract_buffer_chicago,] %>%
+      st_drop_geometry() %>%
+      left_join(allTracts_chicago) %>%
+      st_sf() %>%
+      mutate(TOD = "TOD"),
+    st_centroid(allTracts_chicago)[tract_buffer_chicago, op = st_disjoint] %>%
+      st_drop_geometry() %>%
+      left_join(allTracts_chicago) %>%
+      st_sf() %>%
+      mutate(TOD = "Non-TOD")) %>%
+  mutate(MedRent.inf = ifelse(year == "2009", MedRent * 1.2, MedRent)) 
+# 2009 rent is adjusted for inflation 
+
+allTracts_chicago.Summary <- 
+  st_drop_geometry(allTracts_chicago.group) %>%
+    group_by(year, TOD) %>%
+    summarize(Rent = mean(MedRent.inf, na.rm = T),
+              Population = mean(TotalPop, na.rm = T),
+              Percent_White = mean(pctWhite, na.rm = T),
+              Percent_Bach = mean(pctBachelors, na.rm = T),
+              Percent_Poverty = mean(pctPoverty, na.rm = T))
+
+kable(allTracts_chicago.Summary) %>%
+  kable_styling() %>%
+  footnote(general_title = "\n",
+           general = "Table 1.2")
+
+
+allTracts_chicago.Summary %>%
+  gather(Variables, Value, -year, -TOD) %>%
+  ggplot(aes(year, Value, fill = TOD)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    facet_wrap(~Variables, scales = "free", ncol=5) +
+    scale_fill_manual(values = c("#bae4bc", "#0868ac")) +
+    labs(title = "Indicator differences across time and space")  + theme(legend.position="bottom")
+
+
+
+```
+Rent as a function of distance to stations CMAP
+```{r}
+allTracts_chicago.rings <-
+  st_join(st_centroid(dplyr::select(chicago19, GEOID, year)), 
+          multipleRingBuffer(st_union(cta_stops), 47520, 5280/2)) %>%
+  st_drop_geometry() %>%
+  left_join(dplyr::select(allTracts, GEOID, MedRent, year), 
+            by=c("GEOID"="GEOID", "year"="year")) %>%
+  st_sf() %>%
+  mutate(distance = distance / 5280) #convert to miles
+
+medRent_Distance_chicago <-  allTracts_chicago.rings %>%
+  group_by(distance) %>%
+  summarize(mean_rent = mean(MedRent, na.rm = TRUE))
+
+ggplot() + 
+  
+  geom_line(data = medRent_Distance_chicago, aes(x = distance, y = mean_rent)) 
+
+
+
+```
