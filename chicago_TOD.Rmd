@@ -1,0 +1,266 @@
+---
+title: "Assesing Demand for Transit Accessesible Apartments in Chicago"
+author: "Noah Anderson"
+output: html_document
+---
+
+```{r echo=True, include=FALSE}
+
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(kableExtra)
+library(acs)
+
+options(scipen=999)
+options(tigris_class = "sf")
+
+source("https://raw.githubusercontent.com/urbanSpatial/Public-Policy-Analytics-Landing/master/functions.r")
+
+palette5 <- c("#f0f9e8","#bae4bc","#7bccc4","#43a2ca","#0868ac")
+```
+
+
+# Introduction
+This project uses American Community Studies data to assess demand for rental units with transit access in the City of Chicago. The goal is to Transit Oriented Development (TOD) 
+
+https://www.chicago.gov/city/en/sites/equitable-transit-oriented-development/home.html#:~:text=ETOD%20Pre%2DDevelopment%20Grants%20Up%20to%20%24150%2C000!&text=Apply%20by%20August%2018%2C%202023.,-Learn%20More&text=Every%20Chicagoan%20should%20be%20able,%2DOriented%20Development%20(ETOD).
+
+```{r echo=True, include=FALSE}
+
+cook09 <- 
+  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
+                                             "B15001_009E","B19013_001E","B25058_001E",
+                                             "B06012_002E"), 
+          year=2009, state=17, county=031, geometry=T, output="wide", cache_table = TRUE) %>%
+  st_transform('ESRI:102728') %>%
+  rename(TotalPop = B25026_001E, Whites = B02001_002E,
+         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
+         TotalPoverty = B06012_002E) %>%
+  dplyr::select(-NAME, -starts_with("B")) %>%
+  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
+         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
+         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
+         year = "2009", county = "Cook") %>%
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty) 
+
+
+cook19 <- 
+  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
+                                             "B15001_009E","B19013_001E","B25058_001E",
+                                             "B06012_002E"), 
+          year=2019, state=17, county=031, geometry=T, output="wide", cache_table = TRUE) %>%
+  st_transform('ESRI:102728') %>%
+  rename(TotalPop = B25026_001E, Whites = B02001_002E,
+         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
+         MedHHInc = B19013_001E, MedRent = B25058_001E, 
+         TotalPoverty = B06012_002E) %>%
+  dplyr::select(-NAME, -starts_with("B")) %>%
+  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
+         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
+         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
+         year = "2019", county = "Cook") %>%
+  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty) 
+
+```
+
+
+
+
+
+
+```{r}
+chicago_neighborhoods <- st_read("https://raw.githubusercontent.com/noahba65/chicago-TOD/main/DATA/chicago_boundary.geojson") %>%
+  st_transform('ESRI:102728') %>% st_sf()
+
+
+
+chicago_boundary <- st_union(chicago_neighborhoods) %>% 
+  st_sf()
+
+cta_stops <- st_read("https://raw.githubusercontent.com/ChicagoCityscape/gis-data/master/stations_cta/cta_entrances.geojson") %>%
+  st_transform('ESRI:102728') %>% st_sf()
+
+# Creating Chicago only ACS tract data for 2009 and 2019
+chicago09 <- st_intersection(chicago_boundary, cook09)
+chicago19 <- st_intersection(chicago_boundary,cook19) 
+
+allTracts_chicago <- rbind(chicago09,chicago19)
+
+
+# Creating CTA buffer
+cta_buffer <- st_union(st_buffer(cta_stops,5280/4)) %>%
+  st_sf()
+
+
+
+tract_buffer_chicago <- st_centroid(chicago09)[cta_buffer,] %>%
+  st_drop_geometry() %>%
+  left_join(dplyr::select(chicago09,GEOID)) %>%
+  st_sf()
+
+
+ggplot() +
+  geom_sf(data = st_union(chicago09)) +
+  geom_sf(data = tract_buffer_chicago, fill = "red")  + mapTheme()
+
+```
+
+
+
+```{r}
+
+# Combining CMAP 2009 and 2019 ACS data 
+allTracts_chicago.group <- 
+  rbind( 
+    st_centroid(allTracts_chicago)[tract_buffer_chicago,] %>%
+      st_drop_geometry() %>%
+      left_join(allTracts_chicago) %>%
+      st_sf() %>%
+      mutate(TOD = "TOD"),
+    st_centroid(allTracts_chicago)[tract_buffer_chicago, op = st_disjoint] %>%
+      st_drop_geometry() %>%
+      left_join(allTracts_chicago) %>%
+      st_sf() %>%
+      mutate(TOD = "Non-TOD")) %>%
+  mutate(MedRent.inf = ifelse(year == "2009", MedRent * 1.2, MedRent)) 
+# 2009 rent is adjusted for inflation 
+
+allTracts_chicago.Summary <- 
+  st_drop_geometry(allTracts_chicago.group) %>%
+    group_by(year, TOD) %>%
+    summarize(Rent = mean(MedRent.inf, na.rm = T),
+              Population = mean(TotalPop, na.rm = T),
+              Percent_White = mean(pctWhite, na.rm = T),
+              Percent_Bach = mean(pctBachelors, na.rm = T),
+              Percent_Poverty = mean(pctPoverty, na.rm = T))
+
+kable(allTracts_chicago.Summary) %>%
+  kable_styling() %>%
+  footnote(general_title = "\n",
+           general = "Table 1.2")
+
+
+allTracts_chicago.Summary %>%
+  gather(Variables, Value, -year, -TOD) %>%
+  ggplot(aes(year, Value, fill = TOD)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    facet_wrap(~Variables, scales = "free", ncol=5) +
+    scale_fill_manual(values = c("#bae4bc", "#0868ac")) +
+    labs(title = "Indicator differences across time and space")  + theme(legend.position="bottom")
+
+
+
+```
+Rent as a function of distance to stations CMAP
+```{r}
+allTracts_chicago.rings <-
+  st_join(st_centroid(dplyr::select(chicago19, GEOID, year)), 
+          multipleRingBuffer(st_union(cta_stops), 47520, 5280/2)) %>%
+  st_drop_geometry() %>%
+  left_join(dplyr::select(allTracts_chicago, GEOID, MedRent, year), 
+            by=c("GEOID"="GEOID", "year"="year")) %>%
+  st_sf() %>%
+  mutate(distance = distance / 5280) #convert to miles
+
+medRent_Distance_chicago <-  allTracts_chicago.rings %>%
+  group_by(distance) %>%
+  summarize(mean_rent = mean(MedRent, na.rm = TRUE))
+
+
+ggplot() + 
+  
+  geom_line(data = medRent_Distance_chicago, aes(x = distance, y = mean_rent)) +
+  xlab("Distance (Miles)") + ylab("Mean Rent (USD)") + ggtitle("Rent as a Function of Distance to L Stops")
+
+
+
+```
+
+Looking at a Rent map, we can see that the area near Downtown has much higher rents. This could be the cause of some of the high value associated with TOD regions. 
+```{r}
+ggplot() +
+  geom_sf(data = allTracts_chicago, aes(fill = MedRent)) + 
+  labs(fill = "Median Rent (USD)") + ggtitle("Rent Distribution in Chicago") + 
+  mapTheme() 
+```
+
+
+Select neighborhoods in downtown and exclude them. 
+
+```{r}
+downtown_neighborhoods <- chicago_neighborhoods %>%
+  filter(pri_neigh == "Loop" | pri_neigh == "West Loop" | pri_neigh == "River North" | pri_neigh == "Gold Coast" | pri_neigh == "Streeterville" | pri_neigh == "Lakeshore East" | pri_neigh == "South Loop"  )
+
+downtown_boundary <- st_union(downtown_neighborhoods)
+
+# Excluded neighborhhods
+ggplot() +
+  geom_sf(data = allTracts_chicago)+
+  geom_sf(data = downtown_boundary, fill = "red")  + 
+  
+ 
+   mapTheme()
+
+
+no_downtown <- st_difference(allTracts_chicago, downtown_boundary)
+
+no_downtown.group <- st_difference(allTracts_chicago.group,downtown_boundary)
+```
+
+now repeat summary steps but excluding Chicago. 
+```{r}
+no_downtown.Summary <- 
+  st_drop_geometry(no_downtown.group) %>%
+    group_by(year, TOD) %>%
+    summarize(Rent = mean(MedRent.inf, na.rm = T),
+              Population = mean(TotalPop, na.rm = T),
+              Percent_White = mean(pctWhite, na.rm = T),
+              Percent_Bach = mean(pctBachelors, na.rm = T),
+              Percent_Poverty = mean(pctPoverty, na.rm = T))
+
+kable(no_downtown.Summary) %>%
+  kable_styling() %>%
+  footnote(general_title = "\n",
+           general = "Table 1.2")
+
+
+no_downtown.Summary %>%
+  gather(Variables, Value, -year, -TOD) %>%
+  ggplot(aes(year, Value, fill = TOD)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    facet_wrap(~Variables, scales = "free", ncol=5) +
+    scale_fill_manual(values = c("#bae4bc", "#0868ac")) +
+    labs(title = "Indicator differences across time and space")  + theme(legend.position="bottom")
+
+
+
+```
+
+
+```{r}
+
+
+no_downtown.rings <-
+  st_join(st_centroid(dplyr::select(no_downtown, GEOID, year)), 
+          multipleRingBuffer(st_union(cta_stops), 47520, 5280/2)) %>%
+  st_drop_geometry() %>%
+  left_join(dplyr::select(no_downtown, GEOID, MedRent, year), 
+            by=c("GEOID"="GEOID", "year"="year")) %>%
+  st_sf() %>%
+  mutate(distance = distance / 5280) #convert to miles
+
+medRent_Distance_no_downtown <-  no_downtown.rings %>%
+  group_by(distance) %>%
+  summarize(mean_rent = mean(MedRent, na.rm = TRUE))
+
+
+ggplot() + 
+  
+  geom_line(data = medRent_Distance_no_downtown, aes(x = distance, y = mean_rent)) +
+  xlab("Distance (Miles)") + ylab("Mean Rent (USD)") + ggtitle("Rent as a Function of Distance to L Stops")
+
+
+
+```

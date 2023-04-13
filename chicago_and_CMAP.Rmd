@@ -31,7 +31,7 @@ palette5 <- c("#f0f9e8","#bae4bc","#7bccc4","#43a2ca","#0868ac")
 
 
 # CMAP Region 
-```{r}
+```{r echo=TRUE, results = 'hide'}
 #  Income = B07011_001
 # Pulling ACS Five year data (2005-2009) for the seven CMAP counties
 cook09 <- 
@@ -384,7 +384,7 @@ allTracts_cmap.rings <-
   st_join(st_centroid(dplyr::select(tracts19, GEOID, year)), 
           multipleRingBuffer(st_union(metra_stops), 47520, 5280/2)) %>%
   st_drop_geometry() %>%
-  left_join(dplyr::select(allTracts, GEOID, MedRent, year), 
+  left_join(dplyr::select(tracts19, GEOID, MedRent, year), 
             by=c("GEOID"="GEOID", "year"="year")) %>%
   st_sf() %>%
   mutate(distance = distance / 5280) #convert to miles
@@ -435,7 +435,7 @@ tract_buffer_chicago <- st_centroid(chicago09)[cta_buffer,] %>%
 
 
 ggplot() +
-  geom_sf(data = chicago_tracts, aes(fill = MedRent)) + 
+  geom_sf(data = allTracts_chicago, aes(fill = MedRent)) + 
   labs(fill = "Median Rent (USD)") + ggtitle("Rent Distribution in Chicago") + 
   mapTheme() 
 ggplot() +
@@ -447,8 +447,6 @@ ggplot() +
 
 ```{r}
 
-class(allTracts_chicago)
-class(allTracts_cmap)
 # Combining CMAP 2009 and 2019 ACS data 
 allTracts_chicago.group <- 
   rbind( 
@@ -497,7 +495,7 @@ allTracts_chicago.rings <-
   st_join(st_centroid(dplyr::select(chicago19, GEOID, year)), 
           multipleRingBuffer(st_union(cta_stops), 47520, 5280/2)) %>%
   st_drop_geometry() %>%
-  left_join(dplyr::select(allTracts, GEOID, MedRent, year), 
+  left_join(dplyr::select(allTracts_chicago, GEOID, MedRent, year), 
             by=c("GEOID"="GEOID", "year"="year")) %>%
   st_sf() %>%
   mutate(distance = distance / 5280) #convert to miles
