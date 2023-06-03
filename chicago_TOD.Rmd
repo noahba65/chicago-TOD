@@ -30,64 +30,68 @@ The objective of this project is to leverage indicator variables from the Americ
 
 # Pulling ACS Data
 The chunk presented below utilizes the tidycensus package to extract Five Year ACS data for the 2005-2009 and 2015-2019 surveys, which is focused on Cook County IL. While the 2017-2021 ACS data was also available, it was deemed appropriate to avoid using data that encompasses the pandemic year of 2020 due to its potential impact on transit ridership and popularity. Two distinct data frames are created from the extracted data, each of which are restricted to Cook County IL for further analysis.
+
+TODO: Delete Bachelor data and figure a way to get a more statistically sound median for rent and income. 
+
 ```{r message=FALSE, warning=FALSE, results = FALSE}
-# Gets data for 2005-2009 Five Year ACS for Cook County and wrangles it
-cook09 <- 
-  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E", 
-                                             "B15001_009E","B19013_001E","B25058_001E",
-                                             "B06012_002E"), # Selects target variables 
-          year=2009, state=17, county=031, geometry=T, output="wide", cache_table = TRUE) %>%
-  st_transform('ESRI:102728') %>% # Converts to a standard coordinate system
+StudyYears <- c(2009, 2014, 2019)
+
+# 2009 and 2014 ACS Five-Year have the same rent ranges
+rent_range09_14 <- c(paste0("B25063_00",3:9,"E"),paste0("B25063_0",10:23,"E"))
+
+# 2019 ACS Five-Year has 3 extra rent categories to accommodate rising rent prices
+rent_range19 <- c(paste0("B25063_00",3:9,"E"),paste0("B25063_0",10:26,"E"))
+
+# This function will be used to switch the rent range variables pulled depending on the study year
+rent_range <- function(x){
+  if(x == 2019) {return_range= rent_range19}
+  else{return_range = rent_range09_14}
+  return_range
+}
+
+
+
+
+cook_acs <- map_df(StudyYears, function(x){
+  get_acs(geography = "tract", variables = c("B25026_001E", "B02001_002E","B06012_002E", rent_range(x)), # Selects target variables 
+          year= x, state=17, county=031, geometry=T, output="wide") %>%
+    st_transform('ESRI:102728') %>% # Converts to a standard coordinate system
   
   # Renames variables
-  rename(TotalPop = B25026_001E, Whites = B02001_002E,
-         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
-         MedHHInc = B19013_001E, MedRent = B25058_001E, 
-         TotalPoverty = B06012_002E) %>% 
-  dplyr::select(-NAME, -starts_with("B")) %>%
-  
-  # Converts variables to percentages
-  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
-         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
-         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
-         year = "2009", county = "Cook") %>%
-  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty) 
+    rename(TotalPop = B25026_001E, TotalPopMOE = B25026_001M, 
+         TotalWhite = B02001_002E, TotalWhiteMOE =   B02001_002M,
+         TotalPoverty = B06012_002E, TotalPovertyMOE = B06012_002M, Less_than_100 = B25063_003E, R_100_to_149 = B25063_004E, R_150_to_199 = B25063_005E, 
+         R_200_to_249 = B25063_006E, R_250_to_299 = B25063_007E, R_300_to_349 = B25063_008E, R_350_to_399 = B25063_009E, R_400_to_449 = B25063_010E, 
+         R_450_to_499 = B25063_011E, R_500_to_549  = B25063_012E, R_550_to_599 = B25063_013E, R_600_to_649 = B25063_014E, R_650_to_699 = B25063_015E, 
+         R_700_to_749 = B25063_016E, R_750_to_799 = B25063_017E, R_800_to_899 = B25063_018E, R_900_to_999 = B25063_019E, R_1000_to_1249 = B25063_020E, 
+         R_1250_to_1499 = B25063_021E, R_1500_to_1999 = B25063_022E, R_2000_to_2499 = B25063_023E, Less_than_100MOE = B25063_003M, R_100_to_149MOE = 
+         B25063_004M, R_150_to_199MOE = B25063_005M, R_200_to_249MOE = B25063_006M, R_250_to_299MOE = B25063_007M, R_300_to_349MOE = B25063_008M, 
+         R_350_to_399MOE = B25063_009M, R_400_to_449MOE = B25063_010M,  R_450_to_499MOE = B25063_011M, R_500_to_549MOE  = B25063_012M, R_550_to_599MOE = 
+         B25063_013M, R_600_to_649MOE = B25063_014M, R_650_to_699MOE = B25063_015M, R_700_to_749MOE = B25063_016M, R_750_to_799MOE = B25063_017M, 
+         R_800_to_899MOE = B25063_018M, R_900_to_999MOE = B25063_019M, R_1000_to_1249MOE = B25063_020M, R_1250_to_1499MOE = B25063_021M, R_1500_to_1999MOE = 
+         B25063_022M, R_2000_to_2499MOE = B25063_023M) %>%
+   
 
-# Repeats steps for 2014-2019 ACS
-cook19 <- 
-  get_acs(geography = "tract", variables = c("B25026_001E","B02001_002E","B15001_050E",
-                                             "B15001_009E","B19013_001E","B25058_001E",
-                                             "B06012_002E"), 
-          year=2019, state=17, county=031, geometry=T, output="wide", cache_table = TRUE) %>%
-  st_transform('ESRI:102728') %>%
-  rename(TotalPop = B25026_001E, Whites = B02001_002E,
-         FemaleBachelors = B15001_050E, MaleBachelors = B15001_009E,
-         MedHHInc = B19013_001E, MedRent = B25058_001E, 
-         TotalPoverty = B06012_002E) %>%
-  dplyr::select(-NAME, -starts_with("B")) %>%
-  mutate(pctWhite = ifelse(TotalPop > 0, Whites / TotalPop,0),
-         pctBachelors = ifelse(TotalPop > 0, ((FemaleBachelors + MaleBachelors) / TotalPop),0),
-         pctPoverty = ifelse(TotalPop > 0, TotalPoverty / TotalPop, 0),
-         year = "2019", county = "Cook") %>%
-  dplyr::select(-Whites, -FemaleBachelors, -MaleBachelors, -TotalPoverty) 
+    mutate(Year = x )
+})
+
+cook_acs <- cook_acs %>%
+  rename(R_2500_to_2999 = B25063_024E, R_3000_to_3499 = B25063_025E, R_3500_or_more = B25063_026E, R_2500_to_2999MOE = B25063_024M, R_3000_to_3499MOE = 
+         B25063_025M, R_3500_or_moreMOE = B25063_026M) 
+
+
 
 ```
 
 # Wrangling Transit Data and Setting Boundaries
 The extracted ACS data pertains to the entirety of Cook County, necessitating an initial step to restrict the tracts solely to the City of Chicago. To accomplish this, the chunk presented below imports a geojson shapefile of Chicago Neighborhood boundaries from the official website of the City of Chicago, data.cityofchicago.org. Following several transformations, this shapefile can be utilized to limit the ACS data from the entire Cook County area to solely the City of Chicago.
 ```{r message=FALSE, warning=FALSE}
-chicago_neighborhoods <- st_read("https://raw.githubusercontent.com/noahba65/chicago-TOD/main/DATA/chicago_boundary.geojson") %>%
+chicago_boundary<- st_read("https://raw.githubusercontent.com/noahba65/chicago-TOD/main/DATA/chicago_city_boundary.geojson") %>%
   st_transform('ESRI:102728') %>% st_sf()
 
 
-# Erases internal boundaries between neighborhoods to create a Chicago boundary
-chicago_boundary <- st_union(chicago_neighborhoods) %>% 
-  st_sf()
-
 # Creating Chicago only ACS tract data for 2009 and 2019 using the st_intersection funciton to only select data and geometries within the Chicago boundary. 
-chicago09 <- st_intersection(chicago_boundary, cook09)
-chicago19 <- st_intersection(chicago_boundary,cook19) 
-allTracts_chicago <- rbind(chicago09,chicago19)
+chicago_acs <- st_intersection(chicago_boundary, cook_acs)
 ```
 
 Subsequently, the next phase involves the preparation of transit data for CTA stops. To accomplish this task, the RMarkdown code leverages the transit data made available on the Chicago City Scapes Github page, where a geojson file of the precise locations of each CTA L entrance is retrieved. A quarter-mile buffer surrounding each L stop is then generated, which serves a crucial role in defining the ACS tracts that will be categorized as TOD and non-TOD. Specifically, all tracts whose centroid is encompassed within the quarter-mile buffer are designated as TOD. The ensuing code chunk generates a visual representation of the selected tracts, which is presented in the accompanying map.
@@ -96,88 +100,117 @@ cta_stops <- st_read("https://raw.githubusercontent.com/ChicagoCityscape/gis-dat
   st_transform('ESRI:102728') %>% st_sf()
 
 # Creating CTA buffer
-cta_buffer <- st_union(st_buffer(cta_stops,5280/4)) %>%
+cta_buffer <- st_union(st_buffer(cta_stops,5280/2)) %>%
   st_sf()
 
 # Uses the st_centroid function to select which tracts are TOD
-tract_buffer_chicago <- st_centroid(chicago09)[cta_buffer,] %>%
+tract_buffer_chicago <- st_centroid(chicago_acs)[cta_buffer,] %>%
   st_drop_geometry() %>%
-  left_join(dplyr::select(chicago09,GEOID)) %>%
+  left_join(dplyr::select(chicago_acs,GEOID)) %>%
   st_sf()
 
+
 ggplot() +
-  geom_sf(data = st_union(chicago09)) +
+  geom_sf(data = chicago_boundary) +
   geom_sf(data = tract_buffer_chicago, fill = "red")  + 
   ggtitle("TOD Tracts") + mapTheme() 
 ```
 
 # Visualizing Indicator Variables
 We will proceed by grouping the Chicago data from 2009 and 2019 based on TOD and non-TOD tracts for comparative analysis. Subsequently, the following graphs provide a visual representation of the disparities in the indicators between the two years.
-```{r message=FALSE, warning=FALSE}
+
+
+
+```{r}
 
 # Groups the AllTracts Chicago data frame by TOD and non-TOD
-allTracts_chicago.group <- 
+chicago_acs.group <- 
   rbind( 
-    st_centroid(allTracts_chicago)[tract_buffer_chicago,] %>%
-      st_drop_geometry() %>%
-      left_join(allTracts_chicago) %>%
-      st_sf() %>%
+    st_centroid(chicago_acs)[tract_buffer_chicago,] %>%
       mutate(TOD = "TOD"),
-    st_centroid(allTracts_chicago)[tract_buffer_chicago, op = st_disjoint] %>%
-      st_drop_geometry() %>%
-      left_join(allTracts_chicago) %>%
-      st_sf() %>%
-      mutate(TOD = "Non-TOD")) %>%
-  mutate(MedRent.inf = ifelse(year == "2009", MedRent * 1.2, MedRent)) 
-# 2009 rent is adjusted for inflation
+    
+    st_centroid(chicago_acs)[tract_buffer_chicago, op = st_disjoint] %>%
+      mutate(TOD = "Non-TOD")) 
 
 # Summarizes the means of the indicator variables
-allTracts_chicago.Summary <- 
-  st_drop_geometry(allTracts_chicago.group) %>%
-    group_by(year, TOD) %>%
-    summarize(Rent = mean(MedRent.inf, na.rm = T),
-              Population = mean(TotalPop, na.rm = T),
-              Percent_White = mean(pctWhite, na.rm = T),
-              Percent_Bach = mean(pctBachelors, na.rm = T),
-              Percent_Poverty = mean(pctPoverty, na.rm = T))
+chicago_acs.summary <- 
+  st_drop_geometry(chicago_acs.group) %>%
+    group_by(Year, TOD) %>%
+    summarize(PopSum = sum(TotalPop, na.rm = T),
+              PopSumMOE = moe_sum(TotalPopMOE, TotalPop, na.rm = T),
+              WhiteSum = sum(TotalWhite, na.rm = T),
+              WhiteSumMOE = moe_sum(TotalWhiteMOE, TotalWhite, na.rm = T),
+              PovertySum = sum(TotalPoverty, na.rm = T),
+              PovertySumMOE = moe_sum(TotalPovertyMOE,TotalPoverty, na.rm = T)) %>%
+    mutate(PctWhite_Estimate = WhiteSum/PopSum, 
+           PctWhite_MOE = moe_prop(WhiteSum, PopSum, WhiteSumMOE, PopSumMOE),
+           PctPoverty_Estimate = PovertySum/PopSum,
+           PctPoverty_MOE = moe_prop(PovertySum, PopSum, PovertySumMOE, PopSumMOE),
+           Pop_Estimate = PopSum,
+           Pop_MOE = PopSumMOE) %>%
+   
+    select(Year, TOD, PctWhite_Estimate, PctWhite_MOE, PctPoverty_Estimate, PctPoverty_MOE) 
 
 # Creates a cleaner table for summary statistics
-kable(allTracts_chicago.Summary) %>%
+kable(chicago_acs.summary) %>%
   kable_styling() %>%
   footnote(general_title = "\n",
-           general = "Table 1.2")
+           general = "Indicator Variable Table")
 
-# Visualizes the changes in indicators with bar charts
-allTracts_chicago.Summary %>%
-  gather(Variables, Value, -year, -TOD) %>%
-  ggplot(aes(year, Value, fill = TOD)) +
-    geom_bar(stat = "identity", position = "dodge") +
-    facet_wrap(~Variables, scales = "free", ncol=5) +
+
+
+#Visualizes the changes in indicators with bar charts
+# chicago_acs.summary %>%
+#   pivot_longer(cols = c("Population","Percent White", 
+#          "Percent Below Poverty Line"), names_to = "Variables", values_to = "Value" ) %>%
+#   ggplot(aes(year, Value, fill = TOD)) +
+#   geom_bar(stat = "identity", position = "dodge") +
+#   scale_x_discrete(limits = StudyYears) +
+#   facet_wrap(~Variables, scales = "free", labeller =  labeller(group = label_wrap_gen(width=25))) +
+#   scale_fill_manual(values = c("#bae4bc", "#0868ac")) +
+#   labs(title = "Indicator differences across time and space") +
+#   theme(legend.position="bottom")
+
+# Visualizes changes in indicators with line graphs
+chicago_acs.summary %>%
+  pivot_longer(-c(Year,TOD), names_to = c( "Var", ".value"), names_sep = "_") %>%
+
+  # pivot_longer(cols = c("Population","Percent White",
+  #        "Percent Below Poverty Line"), names_to = "Variables", values_to = "Value" ) %>%
+
+  ggplot(aes(Year, Estimate, color = TOD)) +
+    geom_errorbar(aes(ymin = Estimate - MOE, ymax = Estimate + MOE),width = .5) +
+    geom_line() +
+    geom_point() +
+    scale_x_discrete(limits = StudyYears) +
+    facet_wrap(~Var, scales = "free", labeller =  labeller(group = label_wrap_gen(width=25))) +
     scale_fill_manual(values = c("#bae4bc", "#0868ac")) +
-    labs(title = "Indicator differences across time and space")  + theme(legend.position="bottom")
+    labs(title = "Indicator differences across time and space") +
+    theme(legend.position="bottom")
+
 ```
 
 The poverty rates between the two years were comparable, with an overall reduction in 2019. However, the difference in the percentage of residents with a bachelor's degree is striking, with TOD tracts showing a higher concentration of such individuals in 2019. The percentage of white residents in both types of tracts remained largely unchanged, with a difference of approximately 7%. Additionally, the charts demonstrate a significant increase in the disparity of rent prices between TOD and non-TOD tracts from 2009 to 2019. During the ten-year period, the gap in rent prices between the two categories doubled.
 
 To further examine the relationship between rent prices and proximity to train stops, we have created a line plot that records the rent prices at quarter-mile intervals. We used the multiple rings function defined in the source document by Ken Steif and read it into the document with the first chunk, in order to conduct this analysis.
 ```{r message=FALSE, warning=FALSE}
-allTracts_chicago.rings <-
-  st_join(st_centroid(dplyr::select(chicago19, GEOID, year)), 
-          multipleRingBuffer(st_union(cta_stops), 47520, 5280/4)) %>% # Creates quarter mile rings around transit stops
-  st_drop_geometry() %>%
-  left_join(dplyr::select(allTracts_chicago, GEOID, MedRent, year), 
-            by=c("GEOID"="GEOID", "year"="year")) %>%
-  st_sf() %>%
-  mutate(distance = distance / 5280) #convert to miles
-
-medRent_Distance_chicago <-  allTracts_chicago.rings %>%
-  group_by(distance) %>%
-  summarize(mean_rent = mean(MedRent, na.rm = TRUE))
-
-ggplot() + 
-  
-  geom_line(data = medRent_Distance_chicago, aes(x = distance, y = mean_rent)) +
-  xlab("Distance (Miles)") + ylab("Mean Rent (USD)") + ggtitle("Rent as a Function of Distance to L Stops")
+# chicago_acs.rings <-
+#   st_join(st_centroid(dplyr::select(chicago19, GEOID, year)), 
+#           multipleRingBuffer(st_union(cta_stops), 47520, 5280/4)) %>% # Creates quarter mile rings around transit stops
+#   st_drop_geometry() %>%
+#   left_join(dplyr::select(chicago_acs, GEOID, year), 
+#             by=c("GEOID"="GEOID", "year"="year")) %>%
+#   st_sf() %>%
+#   mutate(distance = distance / 5280) #convert to miles
+# 
+# medRent_Distance_chicago <-  chicago_acs.rings %>%
+#   group_by(distance) %>%
+#   summarize(mean_rent = mean(MedRent, na.rm = TRUE))
+# 
+# ggplot() + 
+#   
+#   geom_line(data = medRent_Distance_chicago, aes(x = distance, y = mean_rent)) +
+#   xlab("Distance (Miles)") + ylab("Mean Rent (USD)") + ggtitle("Rent as a Function of Distance to L Stops")
 ```
 The aforementioned plot depicts a significant increase in rent prices within a quarter mile of L stations, which suggests a high demand for TOD in Chicago. However, beyond the one-mile mark, the relationship becomes less clear and chaotic, indicating that the effect of distance to stops on rent prices diminishes as it is no longer a reasonable walk.
 
@@ -188,7 +221,7 @@ While analysis of indicator variables are not conclusive, they would seem to sug
 It is important to note some limitations of this analysis. Firstly, the use of indicator variables provides a static view and does not account for statistical significance or variance. Another limitation is the potential for geographical bias within the ACS data. For instance, when examining rent prices, it is clear that the area surrounding Downtown Chicago has substantially higher rents, which could influence the high values associated with TOD areas. It is difficult to discern whether individuals are attracted to TOD areas solely for transit access or for other reasons, such as better job markets or increased amenities. Nonetheless, it is clear that TOD is gaining popularity, and cities nationwide could look to Chicago as a successful example of implementing TOD.
 ```{r}
 ggplot() +
-  geom_sf(data = allTracts_chicago, aes(fill = MedRent)) + 
+  geom_sf(data = chicago_acs, aes(fill = MedRent)) + 
   labs(fill = "Median Rent (USD)") + ggtitle("Rent Distribution in Chicago") + 
   mapTheme() 
 ```
